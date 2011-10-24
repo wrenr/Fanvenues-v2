@@ -14,7 +14,7 @@
 		$(document).ready(function() {
 			$('#fvmap').fanvenues({
 				mapSet:'fv',
-				mapId:'6950',	// new meadowlands stadium - football
+				mapId:'6790',	// new meadowlands stadium - football
 				interactWithTicketList: false,
 				priceFilter: true,
 				ticketList:{
@@ -55,6 +55,7 @@
 			})
 			.bind('fvmapSectionSelect', function(obj, smallImageUrl, section, ticketsInSection) {
 					// implement section select event
+					// ticketsInSection is returned only if option 'interactWithTicketList' is true.
 			})
 			.bind('fvmapSectionDeselect', function(obj, smallImageUrl, section) {
 					// implement section deselect event

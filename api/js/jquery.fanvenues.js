@@ -3,8 +3,14 @@
  Copyright (c) 2010 Peekspy Pte Ltd <http://www.peekspy.com>
  Author: Oliver Oxenham
  Date created: 2010-08-02
- Date updated: 2011-09-09
- Latest version: 2.2.3
+ Date updated: 2011-10-24
+ Latest version: 2.2.8
+ 2.2.8 : resolved bug with section select bind event 'fvmapSectionSelect' where ticket list within selected section wasn't being returned properly.
+ 2.2.7 : added public method "getLayoutId" to retrieve the current fanvenues layout ID.
+ 2.2.6 : updated logical bug in price filtering within sections on mouseout event.
+ 2.2.5 : added public method "getOriginalSectionNamesFor". Returns all original section names for a specific section.
+ 2.2.4 : resolved logical bug in price filtering within sections.
+ 		 prevent filtered out sections from being selected.
  2.2.3 : resolved price filtering bug where sections filtered became unfiltered after a mouseout event.
  		 changed use of 'for..in' to standard for-loop to loop through arrays.
  2.2.2 : resolved bug in IE9 ajax requests preventing calls to fanvenues server because of missing 'onprogress' function.
@@ -534,25 +540,38 @@
 						var max = maxP;
 						if (max == 405)
 							max = 99999;
-						if ((fvTicketList[id].minPrice >= min) && (fvTicketList[id].maxPrice <= max)) {
-							thisOptions = {
-			                    strokeColor: polyStrokeColor,
-			                    strokeOpacity: polyStrokeOpacity,
-			                    strokeWeight: polyStrokeWeight,
-			                    fillColor: polyTixFillColor,
-			                    fillOpacity: polyTixFillOpacity
-			                }
-			                this.setOptions(thisOptions);
+						//if ((fvTicketList[id].minPrice >= min) && (fvTicketList[id].maxPrice <= max)) {
+						if (fvTicketList[id].minPrice !== undefined) {	// only look at sections with tickets
+							if ((parseFloat(fvTicketList[id].minPrice) > parseFloat(maxP)) || (parseFloat(fvTicketList[id].maxPrice) < parseFloat(minP))) {
+				                thisOptions = {
+				                    strokeColor: polyStrokeColor,
+				                    strokeOpacity: polyStrokeOpacity,
+				                    strokeWeight: polyStrokeWeight,
+				                    fillColor: polyFillColor,
+				                    fillOpacity: polyFillOpacity
+				                }
+				                this.setOptions(thisOptions);
+							}
+							else {
+								thisOptions = {
+				                    strokeColor: polyStrokeColor,
+				                    strokeOpacity: polyStrokeOpacity,
+				                    strokeWeight: polyStrokeWeight,
+				                    fillColor: polyTixFillColor,
+				                    fillOpacity: polyTixFillOpacity
+				                }
+				                this.setOptions(thisOptions);
+							}
 						}
 						else {
-			                thisOptions = {
-			                    strokeColor: polyStrokeColor,
-			                    strokeOpacity: polyStrokeOpacity,
-			                    strokeWeight: polyStrokeWeight,
-			                    fillColor: polyFillColor,
-			                    fillOpacity: polyFillOpacity
-			                }
-			                this.setOptions(thisOptions);
+				                thisOptions = {
+				                    strokeColor: polyStrokeColor,
+				                    strokeOpacity: polyStrokeOpacity,
+				                    strokeWeight: polyStrokeWeight,
+				                    fillColor: polyFillColor,
+				                    fillOpacity: polyFillOpacity
+				                }
+				                this.setOptions(thisOptions);							
 						}
 					}
 					$("#"+el.attr('id')).trigger("fvmapSectionBlur", [fvTicketList[id].pic + "?size=" + opts.ssize, fvTicketList[id].name]);
@@ -561,32 +580,32 @@
 	            google.maps.event.addListener(polygon, "mousemove",
 	            function(e) {		
 				if ($.inArray(id, sectionSelected) > -1) {
-		                	thisOptions = {
-		                    		strokeColor: polyStrokeColor,
-		                    		strokeOpacity: polyStrokeOpacity,
-		                    		strokeWeight: polyStrokeWeight,
-		                    		fillColor: polyTixSelectedFillColor,
-		                    		fillOpacity: polyTixSelectedFillOpacity
-		                	};
-		                	this.setOptions(thisOptions);					
+                	thisOptions = {
+                    		strokeColor: polyStrokeColor,
+                    		strokeOpacity: polyStrokeOpacity,
+                    		strokeWeight: polyStrokeWeight,
+                    		fillColor: polyTixSelectedFillColor,
+                    		fillOpacity: polyTixSelectedFillOpacity
+                	};
+                	this.setOptions(thisOptions);					
 				}				
 				else {
-		                	thisOptions = {
-		                    		strokeWeight: polyStrokeWeight,
-		                    		strokeOpacity: polyStrokeOpacity,
-		                    		strokeColor: polyStrokeColor,
-		                    		fillColor: polyHoverFillColor,
-		                    		fillOpacity: polyHoverFillOpacity
-		                	};
-		                	this.setOptions(thisOptions);
+                	thisOptions = {
+                    		strokeWeight: polyStrokeWeight,
+                    		strokeOpacity: polyStrokeOpacity,
+                    		strokeColor: polyStrokeColor,
+                    		fillColor: polyHoverFillColor,
+                    		fillOpacity: polyHoverFillOpacity
+                	};
+                	this.setOptions(thisOptions);
 				}
-				$("#"+el.attr('id')).trigger("fvmapSectionFocus", [fvTicketList[id].pic+"?size=" + opts.ssize, fvTicketList[id].name]);
+				$("#"+el.attr('id')).trigger("fvmapSectionFocus", [fvTicketList[id].pic+"?size=" + opts.ssize, fvTicketList[id].name, id]);
 	            });
 				
 				// polygon right-click
 				google.maps.event.addListener(polygon, "rightclick",
 				function() {
-					$("#"+el.attr('id')).trigger("fvmapEnlargeImage", [fvTicketList[id].pic+"?size=" + opts.lsize, fvTicketList[id].name]);
+					$("#"+el.attr('id')).trigger("fvmapEnlargeImage", [fvTicketList[id].pic+"?size=" + opts.lsize, fvTicketList[id].name, id]);
 				});
 				
 				// polygon left-click
@@ -595,16 +614,21 @@
 					if (fvTicketList[id].section != undefined) {		// do not select sections that do not have tickets
 						if ($.inArray(id, sectionSelected) > -1) {		// section is selected. remove from array.
 							sectionSelected = $.grep(sectionSelected, function(i) { return i != id; });	// removing section from array
-							$("#"+el.attr('id')).trigger("fvmapSectionDeselect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name]);
+							$("#"+el.attr('id')).trigger("fvmapSectionDeselect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, id]);
 						}
 						else {
-							sectionSelected = [id].concat(sectionSelected);			// section is not selected. adding section to array.
-							if (opts.interactWithTicketList) {
-								var ticketsInSection = fvTicketList[id].sections;
-								$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, ticketsInSection]);
+							if ((parseFloat(fvTicketList[id].minPrice) > parseFloat(maxP)) || (parseFloat(fvTicketList[id].maxPrice) < parseFloat(minP))) {
+								// this section is currently filtered out so user can't select it
 							}
 							else {
-								$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name]);
+								sectionSelected = [id].concat(sectionSelected);			// section is not selected. adding section to array.
+								if (opts.interactWithTicketList) {
+									var ticketsInSection = fvTicketList[id].sections;
+									$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, ticketsInSection]);
+								}
+								else {
+									$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, id]);
+								}
 							}
 						}
 						if (opts.interactWithTicketList)
@@ -834,13 +858,13 @@
 			minP = min; maxP = max;
 			if ($.inArray(t, sectionSelected) < 0) {
 				if (section.section != undefined) {		// this ticket is on map
-					if ((parseFloat(section.minPrice) >= parseFloat(min)) && (parseFloat(section.maxPrice) <= parseFloat(max))) {
-						// show polygon on map
-						showPolygon(sectionManager[t][0]);
+					if ((parseFloat(section.minPrice) > parseFloat(max)) || (parseFloat(section.maxPrice) < parseFloat(min))) {
+						// hide polygon on map
+						hidePolygon(sectionManager[t][0]);											
 					}
 					else {
-						// hide polygon on map
-						hidePolygon(sectionManager[t][0]);					
+						// show polygon on map
+						showPolygon(sectionManager[t][0]);						
 					}
 				}
 			}
@@ -915,7 +939,20 @@
 		}
 	};
 
+	$.fn.fanvenues.getOriginalSectionNamesFor = function (section) {
+		var list = [];
+		for (s in sectionTranslator) {
+			if (sectionTranslator[s] == section) {
+				list.push(s);
+			}
+		}
+		return list;
+	};
 	
+	$.fn.fanvenues.getLayoutId = function () {
+		return layout_id;
+	};
+
 	$.fn.fanvenues.getAllSections = function () {
 		var allSections = [];
 		for (i in fvTicketList) {
@@ -1004,10 +1041,16 @@
 					for (var i=0; i< opts.ticketList.items.length; i++) {
 						var item = opts.ticketList.items[i];
 						if (item.section.toLowerCase() == sectionName.toLowerCase()) {
-							if (fvTicketList[sectionTranslator[sectionName]].sections == undefined)
+							if (fvTicketList[sectionTranslator[sectionName]].sections == undefined) {
 								fvTicketList[sectionTranslator[sectionName]].sections = [item];
-							else
-								fvTicketList[sectionTranslator[sectionName]].sections.push(item);
+								fvTicketList[sectionTranslator[sectionName]].ids = [item.id];		// keeps ids are tickets for easy matching later
+							}
+							else {
+								if ($.inArray(item.id, fvTicketList[sectionTranslator[sectionName]].ids) < 0) {
+									fvTicketList[sectionTranslator[sectionName]].sections.push(item);
+									fvTicketList[sectionTranslator[sectionName]].ids.push(item.id);
+								}
+							}
 						}
 					}
 					if (fvTicketList[sectionTranslator[sectionName]].minPrice == undefined) {

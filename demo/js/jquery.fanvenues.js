@@ -3,10 +3,12 @@
  Copyright (c) 2010 Peekspy Pte Ltd <http://www.peekspy.com>
  Author: Oliver Oxenham
  Date created: 2010-08-02
- Date updated: 2011-09-16
- Latest version: 2.2.6
+ Date updated: 2011-10-24
+ Latest version: 2.2.8
+ 2.2.8 : resolved bug with section select bind event 'fvmapSectionSelect' where ticket list within selected section wasn't being returned properly.
+ 2.2.7 : added public method "getLayoutId" to retrieve the current fanvenues layout ID.
  2.2.6 : updated logical bug in price filtering within sections on mouseout event.
- 2.2.5 : added public function "getOriginalSectionNamesFor". Returns all original section names for a specific section.
+ 2.2.5 : added public method "getOriginalSectionNamesFor". Returns all original section names for a specific section.
  2.2.4 : resolved logical bug in price filtering within sections.
  		 prevent filtered out sections from being selected.
  2.2.3 : resolved price filtering bug where sections filtered became unfiltered after a mouseout event.
@@ -622,7 +624,7 @@
 								sectionSelected = [id].concat(sectionSelected);			// section is not selected. adding section to array.
 								if (opts.interactWithTicketList) {
 									var ticketsInSection = fvTicketList[id].sections;
-									$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, id, ticketsInSection]);
+									$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, ticketsInSection]);
 								}
 								else {
 									$("#"+el.attr('id')).trigger("fvmapSectionSelect", [fvTicketList[id].pic+"?size="+opts.ssize, fvTicketList[id].name, id]);
@@ -947,6 +949,10 @@
 		return list;
 	};
 	
+	$.fn.fanvenues.getLayoutId = function () {
+		return layout_id;
+	};
+
 	$.fn.fanvenues.getAllSections = function () {
 		var allSections = [];
 		for (i in fvTicketList) {
@@ -1035,10 +1041,16 @@
 					for (var i=0; i< opts.ticketList.items.length; i++) {
 						var item = opts.ticketList.items[i];
 						if (item.section.toLowerCase() == sectionName.toLowerCase()) {
-							if (fvTicketList[sectionTranslator[sectionName]].sections == undefined)
+							if (fvTicketList[sectionTranslator[sectionName]].sections == undefined) {
 								fvTicketList[sectionTranslator[sectionName]].sections = [item];
-							else
-								fvTicketList[sectionTranslator[sectionName]].sections.push(item);
+								fvTicketList[sectionTranslator[sectionName]].ids = [item.id];		// keeps ids are tickets for easy matching later
+							}
+							else {
+								if ($.inArray(item.id, fvTicketList[sectionTranslator[sectionName]].ids) < 0) {
+									fvTicketList[sectionTranslator[sectionName]].sections.push(item);
+									fvTicketList[sectionTranslator[sectionName]].ids.push(item.id);
+								}
+							}
 						}
 					}
 					if (fvTicketList[sectionTranslator[sectionName]].minPrice == undefined) {
