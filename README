@@ -2,8 +2,11 @@
  Copyright (c) 2010 Peekspy Pte Ltd <http://www.peekspy.com>
  Author: Oliver Oxenham
  Date created: 2010-08-02
- Date updated: 2011-10-24
- Latest version: 2.2.8
+ Date updated: 2011-11-03
+ Latest version: 2.2.8f01
+
+ 2.2.8f01 : Add a few event triggers and minor customizations to work with custom implementation.
+
  2.2.8 : resolved bug with section select bind event 'fvmapSectionSelect' where ticket list within selected section wasn't being returned properly.
  2.2.7 : added public method "getLayoutId" to retrieve the current fanvenues layout ID.
  2.2.6 : updated logical bug in price filtering within sections on mouseout event.
