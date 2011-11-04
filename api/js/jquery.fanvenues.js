@@ -325,6 +325,7 @@
 				loadPriceFilter($this);
 			}
 			priceFilterloaded = true;
+			$this.trigger('fvPriceFilterReady'); //price filter ready to be used:
 		});
 		
 		// lock map so it doesn't move too far from center
